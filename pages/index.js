@@ -1,65 +1,109 @@
 import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import { useState, useEffect } from 'react';
+
+const subscriboUrl = 'https://subscribo-git-dev-integration-subscribo-org.vercel.app';
+const apiKey = 'api-key';
 
 export default function Home() {
+  const [subscriptionName, setSubscriptionName] = useState('');
+  const [email, setEmail] = useState('');
+  const [subscription, setSubscription] = useState(null);
+
+  const createSubscription = async () => {
+    const response = await fetch(`${subscriboUrl}/api/v1/subscriptions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        title: subscriptionName,
+        address: {
+          apartmentNumber: '1',
+          buildingNumber: '1',
+          country: 'Polska',
+          city: 'Wrocław',
+          postalCode: '00-000',
+          street: 'Oławska'
+        },
+        buyerType: 'Person',
+        customerFirstName: 'John',
+        customerLastName: 'Doe',
+        delivery: {
+          address: {
+            apartmentNumber: '2',
+            buildingNumber: '2',
+            country: 'Polska',
+            city: 'Warszawa',
+            postalCode: '10-000',
+            street: 'Miodowa'
+          },
+          frequency: 'Monthly',
+          type: 'Courier'
+        },
+        email,
+        nextDeliveryDate: new Date('07-30-2021').toISOString(),
+        notes: 'My notes',
+        phone: '111222333',
+        products: [
+          {
+            name: 'Product 1',
+            quantity: 1,
+            unitPrice: 1000,
+            imageSrc: 'https://cdn.sanity.io/images/za62yfys/staging/e4520ee6bba8964a89bb6835f01a183024e47091-210x210.jpg',
+            eanCode: '123456',
+            externalId: 'id-1'
+          },
+          {
+            name: 'Product 2',
+            quantity: 5,
+            unitPrice: 2000,
+            eanCode: '123456-2',
+            externalId: 'id-2'
+          }
+        ],
+        recipients: '3',
+      })
+    });
+    const newSubscription = await response.json();
+    setSubscription(newSubscription);
+  }
+
+  useEffect(() => {
+    const listener = (event) => {
+      console.log(event.data);
+    };
+    window?.addEventListener('message', listener);
+    return () => window?.removeEventListener(listener);
+  }, []);
+
   return (
-    <div className={styles.container}>
+    <div>
       <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
+        <title>Subscribo Integration Example</title>
+        <link rel='icon' href='/favicon.ico'/>
       </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
+      <div style={{ padding: '32px' }}>
+        {subscription ? <iframe
+          width={800}
+          height={800}
+          src={`${subscriboUrl}/payment-widget?subscriptionId=${subscription.subscription.id}`}
+        /> : <>
+          <div>
+            <label>
+              Subscription name
+              <input value={subscriptionName} onChange={e => setSubscriptionName(e.target.value)}/>
+            </label>
+          </div>
+          <div>
+            <label>
+              E-mail address
+              <input value={email} onChange={e => setEmail(e.target.value)}/>
+            </label>
+          </div>
+          <button onClick={createSubscription} type="button">Create subscription</button>
+        </>}
+      </div>
     </div>
   )
 }
